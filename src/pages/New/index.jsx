@@ -1,4 +1,8 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+
+
 import { Header } from "../../components/header"
 import { Input } from "../../components/Input"
 import { Textarea } from "../../components/Textarea"
@@ -6,9 +10,52 @@ import { NoteItem } from "../../components/NoteItem";
 import { Section } from "../../components/section"
 import { Button } from "../../components/button"
 
+import { api } from '../../Services/api'
+
 import { Container, Form } from "./styles";
 
 export function New(){
+    const [ title, setTitle ] = useState("");
+    const [ description, setDescription ] = useState("")
+
+    const [links, setLinks] = useState([]);
+    const [newLink, setNewLink] = useState("");
+
+    const [tags, setTags] = useState([]);
+    const [newTag, setNewTag] = useState("");
+
+    const navigate = useNavigate();
+
+    function handleAddLink(){
+        setLinks(prevState => [...prevState, newLink]);
+        setNewLink("");
+    }
+
+    function handleRemoveLink(deleted){
+        setLinks(prevState => prevState.filter(link => link !== deleted));
+    }
+
+    function handleAddTag(){
+        setTags(prevState => [...prevState, newTag]); 
+        setNewTag("");
+    }
+
+    function handleRemoveTag(deleted){
+        setTags(prevState => prevState.filter(tag => tag !== deleted));
+    }
+
+    async function handleNewNote(){
+        await api.post("/notes", {
+            title,
+            description,
+            tags,
+            links
+        });
+
+        alert("Nota criada com sucesso!");
+        navigate("/");
+    }
+
     return(
         <Container>
             <Header />
@@ -19,19 +66,65 @@ export function New(){
                         <Link to="/">Voltar</Link>
                     </header>
 
-                    <Input placeholder="Titulo" />
-                    <Textarea placeholder="Observações" />
-                    <Section title="Links úteis">
-                        <NoteItem  value="https://rocketseat.com.br"/>
-                        <NoteItem  isNew placeholder="Novo Link"/>
+                    <Input
+                     placeholder="Titulo" 
+                     onChange={e => setTitle(e.target.value)}
+                     />
+
+                    <Textarea
+                     placeholder="Observações" 
+                     onChange={e => setDescription(e.target.value)}
+                     />
+
+                    <Section title="Links úteis">    
+
+                        {
+                        links.map((Link, index)=> (
+                            <NoteItem 
+                            key={ String(index) }
+                            value={Link}
+                            onClick={() => handleRemoveLink(Link)}
+                           />
+                        ))
+                        }
+
+                        <NoteItem 
+                         isNew 
+                        placeholder="Novo Link"
+                         value={newLink}
+                         onChange={ e=> setNewLink(e.target.value)}
+                         onClick={handleAddLink}
+                        />
                     </Section>
                     <Section title="Marcadores">
                         <div className="tags">
-                    <NoteItem  value="React"/>
-                    <NoteItem  isNew placeholder="Nova Tag"/>
+                    {
+                        tags.map((tag, index) => (
+
+                            <NoteItem 
+                            key={String(index)}
+                             value={tag}
+                             onClick={() => handleRemoveTag(tag)}
+                             />
+                        ))
+                        }
+
+
+                    <NoteItem  
+                    isNew 
+                    placeholder="Nova Tag"
+                    onChange={e => setNewTag(e.target.value)}
+                    value={newTag}
+                    onClick={handleAddTag}
+                    />
                     </div>
                     </Section>
-                    <Button title="Salvar" />
+
+                    <Button 
+                    title="Salvar" 
+                    onClick={handleNewNote} 
+                    />
+
                 </Form>
             </main>
         </Container>
